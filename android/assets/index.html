@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<title>My Podcast</title>
+<style>
+  :root { --line:#e2e8f0; --accent:#2563eb; --bg:#f8fafc; --text:#1e293b; --muted:#64748b; --red:#dc2626; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text);
+    padding-bottom:calc(150px + env(safe-area-inset-bottom));
+  }
+  header {
+    position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line);
+    padding:14px 16px 0; padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  .hrow { display:flex; align-items:baseline; justify-content:space-between; }
+  h1 { font-size:18px; margin:0; }
+  .stat { font-size:12px; color:var(--muted); }
+  .tabs { display:flex; gap:6px; margin-top:10px; }
+  .tabs button {
+    flex:1; border:none; background:none; padding:10px 4px 12px; font-size:14px; color:var(--muted);
+    border-bottom:2px solid transparent; cursor:pointer;
+  }
+  .tabs button.on { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+  .tools { display:flex; gap:8px; margin:10px 0 0; }
+  .search { flex:1; }
+  .search input, .field input[type=text] {
+    width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:10px;
+    font-size:16px; background:#f8fafc; color:var(--text); outline:none;
+  }
+  .search input:focus, .field input:focus { border-color:var(--accent); background:#fff; }
+  .btn {
+    border:none; border-radius:10px; padding:10px 14px; font-size:14px; cursor:pointer;
+    background:var(--accent); color:#fff; white-space:nowrap;
+  }
+  .btn:active { opacity:.85; }
+  .btn.ghost { background:#e2e8f0; color:#1e293b; }
+  .btn[disabled] { background:#cbd5e1; pointer-events:none; }
+  main { padding:12px 16px; max-width:760px; margin:0 auto; }
+  .empty { text-align:center; color:var(--muted); font-size:14px; padding:36px 12px; line-height:1.9; }
+  .empty b { color:var(--text); }
+  .wxhint {
+    display:none; background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af;
+    border-radius:10px; padding:9px 11px; margin-bottom:10px; font-size:12.5px; line-height:1.7;
+  }
+  .ep {
+    display:flex; gap:12px; align-items:center; background:#fff; border:1px solid var(--line);
+    border-radius:12px; padding:12px; margin-bottom:10px; cursor:pointer;
+  }
+  .ep.playing { border-color:var(--accent); box-shadow:0 0 0 2px #dbeafe; }
+  .ep .ico {
+    flex:0 0 40px; width:40px; height:40px; border-radius:10px; background:#eff6ff; color:var(--accent);
+    display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700;
+  }
+  .ep.rec .ico { background:#fef2f2; color:var(--red); }
+  .ep .body { flex:1; min-width:0; }
+  .ep .t {
+    font-size:14px; line-height:1.4; margin-bottom:4px;
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  .ep .meta { font-size:12px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .badge { background:#eff6ff; color:var(--accent); border-radius:6px; padding:1px 6px; font-size:11px; }
+  .ep .progress { height:3px; background:#e2e8f0; border-radius:2px; margin-top:8px; overflow:hidden; }
+  .ep .progress i { display:block; height:100%; background:var(--accent); width:0; }
+  .ep .del { flex:0 0 auto; font-size:18px; color:#cbd5e1; padding:6px 2px; }
+  .ep .del:active { color:#ef4444; }
+
+  .player {
+    position:fixed; left:0; right:0; bottom:0; z-index:20; background:#fff;
+    border-top:1px solid var(--line); padding:10px 16px calc(12px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 16px rgba(15,23,42,.06);
+  }
+  .player .ptitle {
+    font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:8px;
+  }
+  .player .ptitle span { color:var(--muted); font-size:12px; }
+  .barwrap { display:flex; align-items:center; gap:10px; font-size:11px; color:var(--muted); }
+  input[type=range] {
+    -webkit-appearance:none; appearance:none; flex:1; height:4px; border-radius:2px;
+    background:#e2e8f0; outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent);
+  }
+  .ctrls { display:flex; align-items:center; justify-content:center; gap:18px; margin-top:8px; }
+  .cbtn { border:none; background:none; font-size:22px; color:var(--text); cursor:pointer; padding:2px 6px; }
+  .cbtn.small { font-size:14px; color:var(--muted); }
+  .cbtn.small.on { color:var(--accent); font-weight:700; }
+  .play {
+    width:48px; height:48px; border-radius:50%; background:var(--accent); color:#fff;
+    font-size:20px; display:flex; align-items:center; justify-content:center;
+  }
+
+  /* 录音页 */
+  .recwrap { text-align:center; padding:22px 0 8px; }
+  .recbtn {
+    width:110px; height:110px; border-radius:50%; border:none; background:var(--red); color:#fff;
+    font-size:38px; cursor:pointer; box-shadow:0 6px 20px rgba(220,38,38,.28);
+  }
+  .recbtn.on { animation:pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  .recstate { margin-top:12px; font-size:14px; color:var(--muted); }
+  .recstate b { color:var(--red); font-size:16px; }
+  .recbox { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:14px; }
+  .recbox textarea {
+    width:100%; min-height:110px; border:1px solid var(--line); border-radius:10px; padding:10px;
+    font-size:15px; font-family:inherit; resize:vertical; margin-top:8px;
+  }
+  .rowbtns { display:flex; gap:8px; margin:8px 0; }
+  .rowbtns .btn { flex:1; }
+  .recitem {
+    background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px;
+    font-size:13px; color:var(--muted);
+  }
+  .recitem .rt { color:var(--text); font-size:14px; margin-bottom:4px; }
+  .recitem .rtext { white-space:pre-wrap; margin-top:6px; color:#334155; font-size:13px; line-height:1.6; }
+  .recitem .ract { display:flex; gap:8px; margin-top:8px; }
+  .recitem .ract button { padding:6px 10px; font-size:12px; }
+  h3 { font-size:14px; color:#334155; margin:18px 0 8px; }
+
+  /* 设置页 */
+  .field { margin:12px 0; }
+  .field label { display:block; font-size:13px; color:#475569; margin-bottom:5px; }
+  .opts { display:flex; gap:16px; font-size:14px; }
+  .opts label { display:flex; align-items:center; gap:6px; }
+  .opts input { width:18px; height:18px; }
+  .hint { font-size:12px; color:var(--muted); line-height:1.7; margin-top:8px; }
+  .hint code { background:#f1f5f9; padding:1px 5px; border-radius:4px; }
+
+  #toast {
+    position:fixed; left:50%; bottom:170px; transform:translateX(-50%);
+    background:rgba(15,23,42,.9); color:#fff; font-size:13px; padding:9px 16px; border-radius:20px;
+    opacity:0; pointer-events:none; transition:opacity .2s; z-index:50; max-width:80%; text-align:center;
+  }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <h1>My Podcast</h1>
+    <div class="stat" id="stat">—</div>
+  </div>
+  <div class="tabs">
+    <button type="button" data-tab="lib" class="on">媒体库</button>
+    <button type="button" data-tab="rec">录音</button>
+    <button type="button" data-tab="set">设置</button>
+  </div>
+  <div class="tools" id="libTools">
+    <div class="search"><input type="text" id="search" placeholder="搜标题 / 日期"></div>
+    <button class="btn" id="importBtn" type="button">＋ 导入</button>
+  </div>
+  <input type="file" id="fileInput" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.mp4" multiple style="display:none">
+</header>
+
+<main>
+  <!-- 媒体库 -->
+  <section id="tab-lib">
+    <div class="wxhint" id="wxHint">微信里收到的音频：长按文件 → <b>用其他应用打开</b> → 选 <b>My Podcast</b>，会自动进媒体库（不用先保存到手机）</div>
+    <div id="list"></div>
+    <div class="empty" id="empty">
+      还没有节目<br>
+      点右上角 <b>＋ 导入</b>，或去「录音」录一段
+    </div>
+  </section>
+
+  <!-- 录音 -->
+  <section id="tab-rec" style="display:none">
+    <div class="recwrap">
+      <button class="recbtn" id="recBtn" type="button">●</button>
+      <div class="recstate" id="recState">点一下开始录音</div>
+    </div>
+
+    <div class="recbox" id="recBox" style="display:none">
+      <div style="font-size:13px;color:#475569">刚刚这段录音已存进媒体库</div>
+      <div class="rowbtns">
+        <button class="btn" id="trBtn" type="button">转成文字</button>
+        <button class="btn ghost" id="playRecBtn" type="button">先听一遍</button>
+      </div>
+      <textarea id="trText" placeholder="转写结果会出现在这里（需要先在「设置」里填好服务器）"></textarea>
+      <button class="btn ghost" id="copyTr" type="button">复制文字</button>
+    </div>
+
+    <h3>最近录音</h3>
+    <div id="recList"></div>
+  </section>
+
+  <!-- 设置 -->
+  <section id="tab-set" style="display:none">
+    <div class="field">
+      <label>服务器地址（转写服务）</label>
+      <input type="text" id="setServer" placeholder="http://your-server:8787" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>口令（服务器上的 API_TOKEN）</label>
+      <input type="text" id="setToken" placeholder="没设置就留空" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>默认语言</label>
+      <div class="opts">
+        <label><input type="radio" name="lang" value="en"> 英语</label>
+        <label><input type="radio" name="lang" value="zh"> 中文</label>
+      </div>
+      <div class="hint">服务器现在装的是英语模型（small.en），转英文最准；转中文会不准。</div>
+    </div>
+    <div class="rowbtns">
+      <button class="btn" id="saveSet" type="button">保存</button>
+      <button class="btn ghost" id="testSet" type="button">测试连接</button>
+    </div>
+    <div class="hint" id="setMsg"></div>
+    <div class="hint">
+      服务器怎么搭：把 <code>server\</code> 文件夹传到服务器，按里面的「部署说明.md」跑起来。<br>
+      手机和服务器要在能互相访问的网络里（公网服务器或同一个 Wi-Fi）。
+    </div>
+  </section>
+</main>
+
+<div class="player" id="player" style="display:none">
+  <div class="ptitle" id="pTitle">—</div>
+  <div class="barwrap">
+    <span id="tCur">0:00</span>
+    <input type="range" id="seek" min="0" max="1000" value="0">
+    <span id="tDur">0:00</span>
+  </div>
+  <div class="ctrls">
+    <button class="cbtn small" id="speed" type="button">1.0×</button>
+    <button class="cbtn" id="back15" type="button">↺15</button>
+    <button class="cbtn play" id="playBtn" type="button">▶</button>
+    <button class="cbtn" id="fwd15" type="button">15↻</button>
+    <button class="cbtn small" id="loopBtn" type="button">🔁</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const DB_NAME = 'my_podcast_db', DB_VER = 1, STORE = 'episodes';
+  const SETTINGS_KEY = 'my_podcast_settings';
+  const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+  const Native = window.Native || null;
+
+  let db = null;
+  let episodes = [];
+  let view = [];
+  let current = null;
+  let curUrl = '';
+  const DEFAULTS = { server: '', token: '' };
+  let settings = { speed: 1, loop: false, lastId: null, server: DEFAULTS.server, token: DEFAULTS.token, lang: 'en' };
+  let saveTimer = null;
+
+  const $ = id => document.getElementById(id);
+  const audio = new Audio();
+  audio.preload = 'metadata';
+
+  /* ---------- IndexedDB ---------- */
+  function openDB() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open(DB_NAME, DB_VER);
+      r.onupgradeneeded = e => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE)) {
+          d.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+        }
+      };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  function allItems() {
+    return new Promise((res, rej) => {
+      const r = db.transaction(STORE, 'readonly').objectStore(STORE).getAll();
+      r.onsuccess = () => res(r.result || []);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  function putItem(item) {
+    return new Promise((res, rej) => {
+      const r = db.transaction(STORE, 'readwrite').objectStore(STORE).put(item);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  function delItem(id) {
+    return new Promise((res, rej) => {
+      const r = db.transaction(STORE, 'readwrite').objectStore(STORE).delete(id);
+      r.onsuccess = () => res();
+      r.onerror = () => rej(r.error);
+    });
+  }
+
+  /* ---------- 工具 ---------- */
+  function fmtTime(s) {
+    if (!isFinite(s) || s < 0) s = 0;
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return m + ':' + String(sec).padStart(2, '0');
+  }
+  function fmtSize(n) {
+    if (!n) return '0 KB';
+    if (n > 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + ' MB';
+    return Math.max(1, Math.round(n / 1024)) + ' KB';
+  }
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function nowStr() {
+    const d = new Date();
+    return todayStr() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function parseName(name) {
+    let base = name.replace(/\.[^.]+$/, '');
+    let date = '';
+    const m = base.match(/^(\d{4}-\d{2}-\d{2})[_\s-]+(.*)$/);
+    if (m) { date = m[1]; base = m[2]; }
+    base = base.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+    return { title: base || name, date: date };
+  }
+  function getDuration(blob) {
+    return new Promise(resolve => {
+      const a = document.createElement('audio');
+      const url = URL.createObjectURL(blob);
+      let done = false;
+      const finish = v => { if (done) return; done = true; URL.revokeObjectURL(url); resolve(v); };
+      a.preload = 'metadata';
+      a.onloadedmetadata = () => finish(isFinite(a.duration) ? a.duration : 0);
+      a.onerror = () => finish(0);
+      setTimeout(() => finish(isFinite(a.duration) ? a.duration : 0), 8000);
+      a.src = url;
+    });
+  }
+  function dataUrlToBlob(dataUrl) {
+    const parts = dataUrl.split(',');
+    const mime = (parts[0].match(/:(.*?);/) || [])[1] || 'audio/mp4';
+    const bin = atob(parts[1]);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return new Blob([u8], { type: mime });
+  }
+
+  /* ---------- 设置 ---------- */
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) settings = Object.assign(settings, JSON.parse(raw));
+    } catch (e) {}
+    applySettings();
+    $('setServer').value = settings.server || '';
+    $('setToken').value = settings.token || '';
+    const lr = document.querySelector('input[name=lang][value="' + (settings.lang || 'en') + '"]');
+    if (lr) lr.checked = true;
+  }
+  function speedLabel() {
+    return (settings.speed % 1 === 0 ? settings.speed + '.0' : String(settings.speed)) + '×';
+  }
+  function applySettings() {
+    audio.loop = false;
+    $('speed').textContent = speedLabel();
+    audio.playbackRate = settings.speed;
+    $('loopBtn').classList.toggle('on', !!settings.loop);
+  }
+  function saveSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+  }
+
+  /* ---------- Tab ---------- */
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b === btn));
+      ['lib', 'rec', 'set'].forEach(t => {
+        $('tab-' + t).style.display = (t === btn.dataset.tab) ? 'block' : 'none';
+      });
+      $('libTools').style.display = btn.dataset.tab === 'lib' ? 'flex' : 'none';
+      if (btn.dataset.tab === 'rec') renderRecList();
+    });
+  });
+
+  /* ---------- 渲染 ---------- */
+  function sortEpisodes() {
+    episodes.sort((a, b) => {
+      const da = a.date || '', db2 = b.date || '';
+      if (da !== db2) return db2.localeCompare(da);
+      return (b.id || 0) - (a.id || 0);
+    });
+  }
+
+  function render() {
+    const q = ($('search').value || '').trim().toLowerCase();
+    view = episodes.filter(e => {
+      if (!q) return true;
+      return (e.title + ' ' + (e.date || '') + ' ' + (e.filename || '')).toLowerCase().includes(q);
+    });
+
+    const list = $('list');
+    if (!view.length) {
+      list.innerHTML = '';
+      $('empty').style.display = 'block';
+      $('empty').innerHTML = episodes.length
+        ? '没有匹配的节目'
+        : '还没有节目<br>点右上角 <b>＋ 导入</b>，或去「录音」录一段';
+    } else {
+      $('empty').style.display = 'none';
+      list.innerHTML = view.map(e => {
+        const pct = e.duration > 0 ? Math.min(100, (e.position / e.duration) * 100) : 0;
+        const playing = current && current.id === e.id;
+        const isRec = e.kind === 'recording';
+        return '<div class="ep' + (playing ? ' playing' : '') + (isRec ? ' rec' : '') + '" data-id="' + e.id + '">' +
+          '<div class="ico">' + (isRec ? '🎤' : (playing ? '❚❚' : '▶')) + '</div>' +
+          '<div class="body">' +
+            '<div class="t">' + esc(e.title) + '</div>' +
+            '<div class="meta">' +
+              (e.date ? '<span>' + esc(e.date) + '</span>' : '') +
+              '<span>' + fmtTime(e.duration) + '</span>' +
+              '<span>' + fmtSize(e.size) + '</span>' +
+              (e.text ? '<span class="badge">有文字</span>' : '') +
+              (pct > 1 ? '<span>已听 ' + Math.round(pct) + '%</span>' : '') +
+            '</div>' +
+            (pct > 1 ? '<div class="progress"><i style="width:' + pct + '%"></i></div>' : '') +
+          '</div>' +
+          '<div class="del" data-del="' + e.id + '">🗑</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    const total = episodes.reduce((s, e) => s + (e.size || 0), 0);
+    $('stat').textContent = episodes.length + ' 期 · ' + fmtSize(total);
+    renderRecList();
+  }
+
+  function renderRecList() {
+    const recs = episodes.filter(e => e.kind === 'recording').slice(0, 10);
+    const box = $('recList');
+    if (!recs.length) {
+      box.innerHTML = '<div class="empty" style="padding:16px">还没有录音</div>';
+      return;
+    }
+    box.innerHTML = recs.map(e =>
+      '<div class="recitem" data-id="' + e.id + '">' +
+        '<div class="rt">' + esc(e.title) + ' · ' + fmtTime(e.duration) + '</div>' +
+        (e.text ? '<div class="rtext">' + esc(e.text) + '</div>' : '') +
+        '<div class="ract">' +
+          '<button class="btn ghost" data-tr="' + e.id + '">' + (e.text ? '重新转写' : '转成文字') + '</button>' +
+          '<button class="btn ghost" data-play="' + e.id + '">播放</button>' +
+        '</div>' +
+      '</div>'
+    ).join('');
+  }
+
+  /* ---------- 播放 ---------- */
+  function setMediaSession(e) {
+    if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: e.title, artist: e.kind === 'recording' ? '我的录音' : 'SANS StormCast', album: 'My Podcast'
+      });
+      navigator.mediaSession.setActionHandler('seekbackward', () => seekBy(-15));
+      navigator.mediaSession.setActionHandler('seekforward', () => seekBy(15));
+      navigator.mediaSession.setActionHandler('play', () => audio.play());
+      navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+    } catch (err) {}
+  }
+
+  function playEpisode(e, autoplay) {
+    if (!e) return;
+    if (curUrl) { URL.revokeObjectURL(curUrl); curUrl = ''; }
+    current = e;
+    curUrl = URL.createObjectURL(e.blob);
+    audio.src = curUrl;
+    audio.playbackRate = settings.speed;
+    const start = Math.min(e.position || 0, Math.max(0, (e.duration || 0) - 1));
+    audio.currentTime = start > 0 ? start : 0;
+    $('player').style.display = 'block';
+    $('pTitle').innerHTML = esc(e.title) + (e.date ? ' <span>' + esc(e.date) + '</span>' : '');
+    $('tDur').textContent = fmtTime(e.duration);
+    $('playBtn').textContent = '⏸';
+    settings.lastId = e.id; saveSettings();
+    setMediaSession(e);
+    render();
+    if (autoplay !== false) {
+      const p = audio.play();
+      if (p && p.catch) p.catch(() => { $('playBtn').textContent = '▶'; });
+    }
+  }
+
+  function togglePlay() {
+    if (!current) {
+      if (view.length) playEpisode(view[0]);
+      else toast('先导入或录一段');
+      return;
+    }
+    if (audio.paused) {
+      audio.play().catch(() => toast('播放失败'));
+      $('playBtn').textContent = '⏸';
+    } else {
+      audio.pause();
+      $('playBtn').textContent = '▶';
+    }
+  }
+
+  function seekBy(sec) {
+    if (!current) return;
+    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + sec));
+  }
+
+  function savePosition(force) {
+    if (!current) return;
+    const doSave = () => {
+      current.position = audio.currentTime || 0;
+      putItem(current).catch(() => {});
+    };
+    if (force) { clearTimeout(saveTimer); doSave(); return; }
+    if (saveTimer) return;
+    saveTimer = setTimeout(() => { saveTimer = null; doSave(); }, 3000);
+  }
+
+  /* ---------- 录音 ---------- */
+  let recMode = 'none';
+  let webRecorder = null, webChunks = [];
+  let recStart = 0, recTimer = null;
+  let lastRec = null;
+
+  $('recBtn').addEventListener('click', () => {
+    if (recMode === 'none') startRec(); else stopRec();
+  });
+
+  function setRecUI(on, seconds) {
+    $('recBtn').classList.toggle('on', on);
+    $('recBtn').textContent = on ? '■' : '●';
+    $('recState').innerHTML = on
+      ? '录音中 <b>' + fmtTime(seconds) + '</b> 　点方块停止'
+      : '点一下开始录音';
+  }
+
+  function startTimer() {
+    recStart = Date.now();
+    clearInterval(recTimer);
+    recTimer = setInterval(() => {
+      const s = (Date.now() - recStart) / 1000;
+      setRecUI(true, s);
+    }, 500);
+    setRecUI(true, 0);
+  }
+  function stopTimer() { clearInterval(recTimer); recTimer = null; }
+
+  async function startRec(attempt) {
+    attempt = attempt || 0;
+    if (recMode !== 'none') return;
+    if (Native) {
+      const r = Native.startRecord();
+      if (r !== 'ok') {
+        const msg = String(r).replace(/^err:/, '');
+        toast(msg);
+        // 第一次会弹权限框；等用户点「允许」后自动重试，省得再点一次
+        if (msg.indexOf('麦克风权限') >= 0 && attempt < 5) {
+          setTimeout(() => startRec(attempt + 1), 1200);
+        }
+        return;
+      }
+      recMode = 'native';
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        webChunks = [];
+        webRecorder = new MediaRecorder(stream);
+        webRecorder.ondataavailable = e => { if (e.data && e.data.size) webChunks.push(e.data); };
+        webRecorder.start();
+        recMode = 'web';
+      } catch (e) {
+        toast('拿不到麦克风：' + e.message);
+        return;
+      }
+    }
+    startTimer();
+  }
+
+  async function stopRec() {
+    stopTimer();
+    const seconds = (Date.now() - recStart) / 1000;
+    let blob = null;
+
+    if (recMode === 'native') {
+      const r = Native.stopRecord();
+      if (String(r).indexOf('err:') === 0) { toast(String(r).slice(4)); recMode = 'none'; setRecUI(false, 0); return; }
+      blob = dataUrlToBlob(r);
+    } else {
+      blob = await new Promise(res => {
+        webRecorder.onstop = () => res(new Blob(webChunks, { type: (webChunks[0] && webChunks[0].type) || 'audio/webm' }));
+        try { webRecorder.stop(); } catch (e) { res(null); }
+      });
+      try { webRecorder.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+      webRecorder = null;
+    }
+    recMode = 'none';
+    setRecUI(false, 0);
+
+    if (!blob || blob.size < 800) { toast('录音太短，没存'); return; }
+
+    const title = '口语复述 ' + nowStr();
+    const item = {
+      title: title,
+      date: todayStr(),
+      filename: 'rec.m4a',
+      size: blob.size,
+      duration: seconds,
+      position: 0,
+      addedAt: Date.now(),
+      kind: 'recording',
+      text: '',
+      blob: blob
+    };
+    const id = await putItem(item);
+    item.id = id;
+    lastRec = item;
+    await reload();
+    $('recBox').style.display = 'block';
+    $('trText').value = '';
+    $('trBtn').disabled = false;
+    $('trBtn').textContent = '转成文字';
+    toast('已保存 ' + fmtTime(seconds) + '，可以去转文字');
+  }
+
+  $('playRecBtn').addEventListener('click', () => {
+    if (lastRec) playEpisode(lastRec);
+  });
+
+  $('copyTr').addEventListener('click', () => {
+    const t = $('trText');
+    if (!t.value) { toast('还没有文字'); return; }
+    t.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    toast(ok ? '已复制' : '复制失败，长按手动复制');
+  });
+
+  /* ---------- 转写 ---------- */
+  function serverBase() {
+    let s = (settings.server || '').trim();
+    if (!s) return '';
+    s = s.replace(/\/+$/, '');
+    if (!/^https?:\/\//i.test(s)) s = 'http://' + s;
+    return s;
+  }
+
+  async function transcribeEpisode(ep, target) {
+    const base = serverBase();
+    if (!base) { toast('先去「设置」填服务器地址'); setTab('set'); return ''; }
+    if (!ep || !ep.blob) { toast('找不到音频'); return ''; }
+
+    target.disabled = true;
+    const old = target.textContent;
+    target.textContent = '转写中…';
+
+    try {
+      const fd = new FormData();
+      const isM4a = /mp4|m4a|aac/i.test(ep.blob.type || '');
+      fd.append('audio', ep.blob, isM4a ? 'rec.m4a' : 'rec.webm');
+      fd.append('lang', settings.lang || 'en');
+
+      const headers = {};
+      if (settings.token) headers['X-Token'] = settings.token;
+
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 180000);
+      const res = await fetch(base + '/api/transcribe', { method: 'POST', headers: headers, body: fd, signal: ctrl.signal });
+      clearTimeout(to);
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error('服务器 ' + res.status + '：' + txt.slice(0, 120));
+      }
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      ep.text = data.text || '';
+      await putItem(ep);
+      await reload();
+      toast('转写完成（' + (data.elapsed || '?') + ' 秒）');
+      return ep.text;
+    } catch (e) {
+      const msg = e.name === 'AbortError' ? '超时了，音频太长或服务器没响应' : (e.message || String(e));
+      toast('转写失败：' + msg);
+      return '';
+    } finally {
+      target.disabled = false;
+      target.textContent = old;
+    }
+  }
+
+  $('trBtn').addEventListener('click', async () => {
+    if (!lastRec) return;
+    $('trText').value = '正在转写…';
+    const text = await transcribeEpisode(lastRec, $('trBtn'));
+    $('trText').value = text || '（没拿到文字，检查设置里的服务器和口令）';
+  });
+
+  $('recList').addEventListener('click', async e => {
+    const tr = e.target.closest('[data-tr]');
+    if (tr) {
+      const id = Number(tr.dataset.tr);
+      const ep = episodes.find(x => x.id === id);
+      if (!ep) return;
+      const text = await transcribeEpisode(ep, tr);
+      if (text && lastRec && lastRec.id === id) $('trText').value = text;
+      return;
+    }
+    const pl = e.target.closest('[data-play]');
+    if (pl) {
+      const id = Number(pl.dataset.play);
+      const ep = episodes.find(x => x.id === id);
+      if (ep) playEpisode(ep);
+    }
+  });
+
+  function setTab(name) {
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+    ['lib', 'rec', 'set'].forEach(t => { $('tab-' + t).style.display = (t === name) ? 'block' : 'none'; });
+    $('libTools').style.display = name === 'lib' ? 'flex' : 'none';
+    if (name === 'rec') renderRecList();
+  }
+
+  /* ---------- 设置页 ---------- */
+  $('saveSet').addEventListener('click', () => {
+    settings.server = $('setServer').value.trim();
+    settings.token = $('setToken').value.trim();
+    const lr = document.querySelector('input[name=lang]:checked');
+    settings.lang = lr ? lr.value : 'en';
+    saveSettings();
+    $('setMsg').textContent = '已保存';
+    toast('设置已保存');
+  });
+
+  $('testSet').addEventListener('click', async () => {
+    const base = ($('setServer').value.trim() || '').replace(/\/+$/, '');
+    if (!base) { $('setMsg').textContent = '先填服务器地址'; return; }
+    const url = (/^https?:\/\//i.test(base) ? base : 'http://' + base) + '/api/health';
+    $('setMsg').textContent = '测试中…';
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 10000);
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(to);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      $('setMsg').textContent = data.ok ? ('连接成功 · 模型 ' + data.model) : ('异常：' + JSON.stringify(data));
+    } catch (e) {
+      $('setMsg').textContent = '连不上：' + (e.name === 'AbortError' ? '超时' : e.message);
+    }
+  });
+
+  /* ---------- 媒体库交互 ---------- */
+  audio.addEventListener('timeupdate', () => {
+    const d = audio.duration || (current && current.duration) || 0;
+    $('tCur').textContent = fmtTime(audio.currentTime);
+    $('tDur').textContent = fmtTime(d);
+    const v = d > 0 ? Math.round((audio.currentTime / d) * 1000) : 0;
+    if (!seeking) $('seek').value = v;
+    savePosition(false);
+  });
+  let seeking = false;
+  $('seek').addEventListener('input', () => { seeking = true; });
+  $('seek').addEventListener('change', e => {
+    seeking = false;
+    const d = audio.duration || 0;
+    if (d > 0) audio.currentTime = (Number(e.target.value) / 1000) * d;
+  });
+  audio.addEventListener('ended', () => {
+    if (!current) return;
+    if (settings.loop) { audio.currentTime = 0; audio.play().catch(() => {}); return; }
+    current.position = 0; putItem(current).catch(() => {});
+    const idx = view.findIndex(e => e.id === current.id);
+    const next = idx >= 0 ? view[idx + 1] : null;
+    if (next) playEpisode(next);
+    else { $('playBtn').textContent = '▶'; render(); }
+  });
+  audio.addEventListener('play', () => { $('playBtn').textContent = '⏸'; render(); });
+  audio.addEventListener('pause', () => { $('playBtn').textContent = '▶'; savePosition(true); });
+
+  $('playBtn').addEventListener('click', togglePlay);
+  $('back15').addEventListener('click', () => seekBy(-15));
+  $('fwd15').addEventListener('click', () => seekBy(15));
+  $('speed').addEventListener('click', () => {
+    const i = SPEEDS.indexOf(settings.speed);
+    settings.speed = SPEEDS[(i + 1) % SPEEDS.length];
+    audio.playbackRate = settings.speed;
+    saveSettings(); applySettings();
+    toast(settings.speed + '×');
+  });
+  $('loopBtn').addEventListener('click', () => {
+    settings.loop = !settings.loop;
+    saveSettings(); applySettings();
+    toast(settings.loop ? '单曲循环开' : '单曲循环关');
+  });
+  $('search').addEventListener('input', render);
+
+  $('list').addEventListener('click', async e => {
+    const delEl = e.target.closest('[data-del]');
+    if (delEl) {
+      e.stopPropagation();
+      const id = Number(delEl.dataset.del);
+      const item = episodes.find(x => x.id === id);
+      if (!item) return;
+      if (!confirm('删除《' + item.title + '》？\n（只删手机上这一份）')) return;
+      if (current && current.id === id) { audio.pause(); current = null; $('player').style.display = 'none'; }
+      await delItem(id);
+      episodes = episodes.filter(x => x.id !== id);
+      render();
+      toast('已删除');
+      return;
+    }
+    const row = e.target.closest('.ep');
+    if (!row) return;
+    const id = Number(row.dataset.id);
+    const item = episodes.find(x => x.id === id);
+    if (!item) return;
+    if (current && current.id === id) { togglePlay(); return; }
+    playEpisode(item);
+  });
+
+  /* ---------- 导入 ---------- */
+  $('importBtn').addEventListener('click', () => $('fileInput').click());
+  $('fileInput').addEventListener('change', async ev => {
+    const files = Array.from(ev.target.files || []);
+    if (!files.length) return;
+    $('importBtn').disabled = true;
+    let ok = 0;
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      $('importBtn').textContent = '导入 ' + (i + 1) + '/' + files.length;
+      try {
+        const info = parseName(f.name);
+        const duration = await getDuration(f);
+        await putItem({
+          title: info.title,
+          date: info.date,
+          filename: f.name,
+          size: f.size,
+          duration: duration,
+          position: 0,
+          addedAt: Date.now(),
+          kind: 'podcast',
+          text: '',
+          blob: f
+        });
+        ok++;
+      } catch (err) {
+        console.warn('导入失败', f.name, err);
+      }
+    }
+    $('importBtn').disabled = false;
+    $('importBtn').textContent = '＋ 导入';
+    ev.target.value = '';
+    await reload();
+    toast(ok ? '导入成功 ' + ok + ' 个' : '导入失败，检查文件格式');
+  });
+
+  /* ---------- 微信 / 文件管理器「用其他应用打开」转发进来的音频 ---------- */
+  let importingNative = false;
+  async function importFromNative() {
+    if (importingNative || !Native || !Native.getPendingImports) return;
+    let names = [];
+    try {
+      names = String(Native.getPendingImports() || '').split('\n').filter(Boolean);
+    } catch (e) {
+      return;
+    }
+    if (!names.length) return;
+    importingNative = true;
+    $('importBtn').disabled = true;
+    let ok = 0;
+    const base = (Native.importBaseUrl && Native.importBaseUrl()) || 'https://local.podcast/imports/';
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i];
+      $('importBtn').textContent = '导入 ' + (i + 1) + '/' + names.length;
+      try {
+        const res = await fetch(base + encodeURIComponent(name));
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const blob = await res.blob();
+        if (!blob.size) throw new Error('空文件');
+        const info = parseName(name);
+        const duration = await getDuration(blob);
+        await putItem({
+          title: info.title,
+          date: info.date,
+          filename: name,
+          size: blob.size,
+          duration: duration,
+          position: 0,
+          addedAt: Date.now(),
+          kind: 'podcast',
+          text: '',
+          blob: blob
+        });
+        ok++;
+      } catch (err) {
+        console.warn('外部导入失败', name, err);
+      }
+      try { Native.deleteImport(name); } catch (e) {}
+    }
+    $('importBtn').disabled = false;
+    $('importBtn').textContent = '＋ 导入';
+    await reload();
+    toast(ok ? '已从微信导入 ' + ok + ' 个' : '导入失败，检查文件格式');
+    importingNative = false;
+  }
+  window.__nativeImportReady = () => { importFromNative(); };
+
+  /* ---------- 启动 ---------- */
+  async function reload() {
+    episodes = await allItems();
+    sortEpisodes();
+    render();
+  }
+
+  async function init() {
+    loadSettings();
+    try {
+      db = await openDB();
+    } catch (e) {
+      document.body.innerHTML = '<div style="padding:40px;font-size:15px;line-height:2">' +
+        '本地存储不可用，无法保存音频。</div>';
+      return;
+    }
+    await reload();
+
+    if (Native) {
+      $('wxHint').style.display = 'block';
+      importFromNative();
+    }
+
+    if (settings.lastId) {
+      const last = episodes.find(e => e.id === settings.lastId);
+      if (last) {
+        playEpisode(last, false);
+        $('playBtn').textContent = '▶';
+        audio.pause();
+      }
+    }
+    window.addEventListener('pagehide', () => savePosition(true));
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        savePosition(true);
+        if (recMode !== 'none') {
+          // 页面被切走时录音仍在系统里，保持状态即可
+        }
+      } else if (Native) {
+        // 从微信「用其他应用打开」切回来时，把新文件取进来
+        importFromNative();
+      }
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

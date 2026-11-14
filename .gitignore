@@ -1,0 +1,16 @@
+# 构建中间产物
+android/build/
+*.idsig
+
+# 签名密钥（不要提交）
+debug.keystore
+*.keystore
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# faster-whisper 下载的模型（464MB）
+server/模型/
+server/models/
