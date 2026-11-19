@@ -6,7 +6,7 @@
 #   export JAVA_HOME=/path/to/jdk-17
 #   export ANDROID_SDK=/path/to/Android/sdk
 #   bash build.sh
-# 产物：../dist/MyPodcast-v1.2.apk
+# 产物：../dist/MyPodcast-v1.3.apk
 set -e
 
 : "${JAVA_HOME:?请先设置 JAVA_HOME（JDK 17）}"
@@ -29,7 +29,7 @@ else PY=python; fi
 export PATH="$JAVA_HOME/bin:$PATH"
 cd "$(dirname "$0")"
 
-OUT="../dist/MyPodcast-v1.2.apk"
+OUT="../dist/MyPodcast-v1.3.apk"
 mkdir -p ../dist
 rm -rf build
 mkdir -p build/classes build/gen build/dex
@@ -86,4 +86,4 @@ fi
 
 "$APKSIGNER" verify --print-certs "$OUT" | head -5
 ls -lh "$OUT"
-echo "构建完成：$(cd ../dist && pwd)/MyPodcast-v1.2.apk"
+echo "构建完成：$(cd ../dist && pwd)/MyPodcast-v1.3.apk"

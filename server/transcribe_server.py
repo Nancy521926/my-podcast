@@ -6,7 +6,8 @@
   GET  /api/health                     → {"ok":true,"model":"small.en"}
   POST /api/transcribe                 → 表单 audio=<文件>, lang=en|zh
        可选请求头 X-Token: <API_TOKEN 环境变量>
-       返回 {"text":"...","duration":6.2,"elapsed":3.1}
+       返回 {"text":"...","segments":[{"start":0.0,"end":3.2,"text":"..."}],
+             "duration":6.2,"elapsed":3.1}
 
 启动
   export API_TOKEN=你的口令
@@ -116,9 +117,19 @@ def transcribe():
             beam_size=5,
             vad_filter=True,
         )
-        text = " ".join(s.text.strip() for s in segments if s.text.strip())
+        segs = []
+        for s in segments:
+            t = s.text.strip()
+            if t:
+                segs.append({
+                    "start": round(float(s.start), 2),
+                    "end": round(float(s.end), 2),
+                    "text": t,
+                })
+        text = " ".join(x["text"] for x in segs)
         return jsonify(
             text=text,
+            segments=segs,          # 给 App 播放页做可点击跳转的字幕；老版本忽略这个字段
             duration=round(duration, 1),
             elapsed=round(time.time() - t0, 1),
             language=info.language,
