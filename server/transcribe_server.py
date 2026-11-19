@@ -8,12 +8,15 @@
        可选请求头 X-Token: <API_TOKEN 环境变量>
        返回 {"text":"...","segments":[{"start":0.0,"end":3.2,"text":"..."}],
              "duration":6.2,"elapsed":3.1}
+  POST /api/transcribe?stream=1        → 同上，但按句流式返回 NDJSON：
+       每行 {"start":..,"end":..,"text":".."}，最后一行 {"done":true,...}
 
 启动
   export API_TOKEN=你的口令
   python3 transcribe_server.py            # 默认 0.0.0.0:8787
   PORT=9000 python3 transcribe_server.py
 """
+import json
 import os
 import sys
 import time
@@ -25,7 +28,7 @@ os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 import av
 import numpy as np
 from faster_whisper import WhisperModel
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, stream_with_context
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE, "模型")
@@ -117,6 +120,37 @@ def transcribe():
             beam_size=5,
             vad_filter=True,
         )
+        want_stream = (request.args.get("stream") or "").lower() in ("1", "true", "yes")
+        if want_stream:
+            def gen():
+                segs = []
+                try:
+                    for s in segments:
+                        t = s.text.strip()
+                        if not t:
+                            continue
+                        item = {
+                            "start": round(float(s.start), 2),
+                            "end": round(float(s.end), 2),
+                            "text": t,
+                        }
+                        segs.append(item)
+                        yield json.dumps(item, ensure_ascii=False) + "\n"
+                    yield json.dumps({
+                        "done": True,
+                        "text": " ".join(x["text"] for x in segs),
+                        "duration": round(duration, 1),
+                        "elapsed": round(time.time() - t0, 1),
+                        "language": info.language,
+                    }, ensure_ascii=False) + "\n"
+                except Exception as e:
+                    yield json.dumps({"error": str(e)}, ensure_ascii=False) + "\n"
+
+            resp = Response(stream_with_context(gen()), mimetype="application/x-ndjson")
+            resp.headers["Cache-Control"] = "no-cache"
+            resp.headers["X-Accel-Buffering"] = "no"   # 让 nginx 不缓存，句子才能边转边到
+            return resp
+
         segs = []
         for s in segments:
             t = s.text.strip()

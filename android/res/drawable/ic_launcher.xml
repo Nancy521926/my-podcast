@@ -4,10 +4,51 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- 奶油粉色圆角底 -->
     <path
-        android:fillColor="#2563EB"
-        android:pathData="M12,0 L96,0 A12,12 0 0 1 108,12 L108,96 A12,12 0 0 1 96,108 L12,108 A12,12 0 0 1 0,96 L0,12 A12,12 0 0 1 12,0 Z" />
+        android:fillColor="#FFF3E9"
+        android:pathData="M24,6 L84,6 A18,18 0 0 1 102,24 L102,84 A18,18 0 0 1 84,102 L24,102 A18,18 0 0 1 6,84 L6,24 A18,18 0 0 1 24,6 Z" />
+
+    <!-- 粉色唱片（与自适应图标保持一致） -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M42,33 L78,54 L42,75 Z" />
+        android:fillColor="#F496B0"
+        android:pathData="M54,28 A26,26 0 1,1 54,80 A26,26 0 1,1 54,28 Z" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,28.9 A25.1,25.1 0 1,1 54,79.1 A25.1,25.1 0 1,1 54,28.9 Z"
+        android:strokeColor="#FAC0CF"
+        android:strokeWidth="1.1" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,33.4 A20.6,20.6 0 1,1 54,74.6 A20.6,20.6 0 1,1 54,33.4 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeAlpha="0.33"
+        android:strokeWidth="0.9" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,38.2 A15.8,15.8 0 1,1 54,69.8 A15.8,15.8 0 1,1 54,38.2 Z"
+        android:strokeColor="#E87898"
+        android:strokeAlpha="0.5"
+        android:strokeWidth="0.7" />
+    <path
+        android:fillColor="#FFF9EF"
+        android:pathData="M54,45 A9,9 0 1,1 54,63 A9,9 0 1,1 54,45 Z" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,45 A9,9 0 1,1 54,63 A9,9 0 1,1 54,45 Z"
+        android:strokeColor="#F6C2D2"
+        android:strokeWidth="0.9" />
+    <path
+        android:fillColor="#EF6F92"
+        android:pathData="M54,58.2 C50.4,55.2 47.2,52.4 47.2,49.4 C47.2,47.1 49.1,45.4 51.3,45.4 C52.8,45.4 53.7,46.2 54,47.1 C54.3,46.2 55.2,45.4 56.7,45.4 C58.9,45.4 60.8,47.1 60.8,49.4 C60.8,52.4 57.6,55.2 54,58.2 Z" />
+
+    <!-- 小星星 -->
+    <path
+        android:fillColor="#FFF9EF"
+        android:pathData="M27,25 L28.2,28.3 L31.5,29.5 L28.2,30.7 L27,34 L25.8,30.7 L22.5,29.5 L25.8,28.3 Z" />
+    <path
+        android:fillColor="#EF6F92"
+        android:fillAlpha="0.55"
+        android:pathData="M83,69 L83.9,71.4 L86.3,72.3 L83.9,73.2 L83,75.6 L82.1,73.2 L79.7,72.3 L82.1,71.4 Z" />
 </vector>

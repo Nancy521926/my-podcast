@@ -455,7 +455,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String version() {
-            return "1.3";
+            return "1.4";
         }
     }
 

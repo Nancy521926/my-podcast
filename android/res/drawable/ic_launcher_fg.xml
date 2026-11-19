@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 粉色唱片 -->
+    <path
+        android:fillColor="#F496B0"
+        android:pathData="M54,28 A26,26 0 1,1 54,80 A26,26 0 1,1 54,28 Z" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,28.9 A25.1,25.1 0 1,1 54,79.1 A25.1,25.1 0 1,1 54,28.9 Z"
+        android:strokeColor="#FAC0CF"
+        android:strokeWidth="1.1" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,33.4 A20.6,20.6 0 1,1 54,74.6 A20.6,20.6 0 1,1 54,33.4 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeAlpha="0.33"
+        android:strokeWidth="0.9" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,38.2 A15.8,15.8 0 1,1 54,69.8 A15.8,15.8 0 1,1 54,38.2 Z"
+        android:strokeColor="#E87898"
+        android:strokeAlpha="0.5"
+        android:strokeWidth="0.7" />
+
+    <!-- 米色标签 + 爱心 -->
+    <path
+        android:fillColor="#FFF9EF"
+        android:pathData="M54,45 A9,9 0 1,1 54,63 A9,9 0 1,1 54,45 Z" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,45 A9,9 0 1,1 54,63 A9,9 0 1,1 54,45 Z"
+        android:strokeColor="#F6C2D2"
+        android:strokeWidth="0.9" />
+    <path
+        android:fillColor="#EF6F92"
+        android:pathData="M54,58.2 C50.4,55.2 47.2,52.4 47.2,49.4 C47.2,47.1 49.1,45.4 51.3,45.4 C52.8,45.4 53.7,46.2 54,47.1 C54.3,46.2 55.2,45.4 56.7,45.4 C58.9,45.4 60.8,47.1 60.8,49.4 C60.8,52.4 57.6,55.2 54,58.2 Z" />
+
+    <!-- 小星星 -->
+    <path
+        android:fillColor="#FFF9EF"
+        android:pathData="M34,32.6 L34.9,35.1 L37.4,36 L34.9,36.9 L34,39.4 L33.1,36.9 L30.6,36 L33.1,35.1 Z" />
+    <path
+        android:fillColor="#EF6F92"
+        android:fillAlpha="0.55"
+        android:pathData="M73,69.8 L73.7,71.5 L75.4,72.2 L73.7,72.9 L73,74.6 L72.3,72.9 L70.6,72.2 L72.3,71.5 Z" />
+</vector>

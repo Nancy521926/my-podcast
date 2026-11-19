@@ -28,7 +28,8 @@
     padding:14px 16px 10px; padding-top:calc(14px + env(safe-area-inset-top));
   }
   .hrow { display:flex; align-items:baseline; justify-content:space-between; }
-  h1 { font-size:18px; margin:0; letter-spacing:.02em; }
+  h1 { font-size:18px; margin:0; letter-spacing:.02em; display:flex; align-items:center; gap:7px; }
+  .logo { width:23px; height:23px; flex:0 0 auto; filter:drop-shadow(0 3px 6px rgba(226,112,140,.25)); }
   .stat { font-size:12px; color:var(--muted); }
   .tabs { display:flex; gap:8px; margin-top:10px; }
   .tabs button {
@@ -162,6 +163,12 @@
   .opts { display:flex; gap:16px; font-size:14px; }
   .opts label { display:flex; align-items:center; gap:6px; }
   .opts input { width:18px; height:18px; accent-color:#EF8CA6; }
+  .switchrow {
+    display:flex !important; align-items:center; justify-content:space-between; gap:10px;
+    background:#FFF6F1; border:1.5px solid #F9E4DA; border-radius:14px; padding:10px 12px;
+  }
+  .switchrow small { color:var(--muted); font-weight:400; }
+  .switchrow input { width:20px; height:20px; accent-color:#EF8CA6; flex:0 0 auto; }
   .hint { font-size:12px; color:var(--muted); line-height:1.7; margin-top:8px; }
   .hint code { background:#FDEDE6; padding:1px 5px; border-radius:6px; }
 
@@ -193,7 +200,8 @@
     color:#C97C92; font-size:20px; line-height:1; cursor:pointer; box-shadow:0 3px 10px rgba(226,140,160,.16);
   }
   .np-label { font-size:12px; color:#B08A84; letter-spacing:.22em; }
-  .np-heart { width:38px; text-align:center; font-size:17px; opacity:.85; }
+  .np-heart { width:38px; display:flex; justify-content:center; opacity:.9; }
+  .np-heart svg { width:20px; height:20px; display:block; }
   .np-body {
     flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
     display:flex; flex-direction:column; align-items:center; padding:6px 2px 10px;
@@ -210,8 +218,11 @@
   }
   .disc.playing { animation-play-state:running; }
   .disc::after {
-    content:"💗"; font-size:clamp(24px,6.5vw,32px);
-    width:29%; aspect-ratio:1; border-radius:50%; background:#FFF9EF;
+    content:""; font-size:0;
+    width:29%; aspect-ratio:1; border-radius:50%;
+    background-color:#FFF9EF;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 31c-5.2-3.8-9-7.3-9-11.2 0-3 2.3-5.2 5.2-5.2 1.9 0 3.1 1 3.8 2.1.7-1.1 1.9-2.1 3.8-2.1 2.9 0 5.2 2.2 5.2 5.2 0 3.9-3.8 7.4-9 11.2z' fill='%23EF6F92'/%3E%3C/svg%3E");
+    background-size:54%; background-position:center; background-repeat:no-repeat;
     display:flex; align-items:center; justify-content:center;
     box-shadow:inset 0 0 0 3px rgba(244,175,194,.45);
   }
@@ -234,6 +245,24 @@
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
   .np-sub { flex:0 0 auto; font-size:12.5px; color:#A9847C; margin-top:6px; text-align:center; }
+  .np-live {
+    flex:0 0 auto; width:100%; margin-top:12px; min-height:46px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    background:linear-gradient(135deg,rgba(255,244,248,.92),rgba(255,250,238,.92));
+    border:1.5px dashed #F6CFDD; border-radius:16px; padding:9px 14px;
+    color:#8C5D6A; font-size:14.5px; line-height:1.55; text-align:center;
+    box-shadow:0 4px 14px rgba(240,160,185,.10);
+    transition:background .2s, border-color .2s;
+  }
+  .np-live.on {
+    background:linear-gradient(135deg,#FFE3EC,#FFF4E4);
+    border-style:solid; border-color:#F5B9CC; color:#7C4658;
+  }
+  .np-live.busy { border-style:solid; border-color:#F6D3B8; color:#A07A58; }
+  .np-live-ico { flex:0 0 auto; font-size:15px; }
+  .np-live-text {
+    min-width:0; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  }
   .np-bar { flex:0 0 auto; width:100%; margin-top:16px; }
   .np-bar input[type=range] { display:block; width:100%; height:6px; margin:0; }
   .np-times { display:flex; justify-content:space-between; font-size:11.5px; color:#A9847C; margin-top:6px; }
@@ -245,10 +274,14 @@
     flex:0 0 auto; width:40px; height:40px; border-radius:13px; border:none;
     background:rgba(255,255,255,.78); color:#8A645C; font-size:15px; cursor:pointer;
     box-shadow:0 3px 10px rgba(226,140,160,.14); line-height:1;
+    display:flex; align-items:center; justify-content:center;
   }
   .np-btn:active { transform:scale(.94); }
   .np-btn.txt { font-size:11.5px; letter-spacing:.02em; }
   .np-btn.modeon { background:linear-gradient(135deg,#FFC1D0,#FFD9C2); color:#fff; }
+  .np-btn svg { width:20px; height:20px; display:block; }
+  .cbtn { display:inline-flex; align-items:center; justify-content:center; }
+  .cbtn.small svg { width:16px; height:16px; display:block; }
   .np-play {
     flex:0 0 auto; width:64px; height:64px; border-radius:50%; border:none;
     background:linear-gradient(135deg,#F98DA8,#F7A48E); color:#fff; font-size:24px;
@@ -274,11 +307,15 @@
   }
   .cap {
     padding:8px 10px; font-size:14px; line-height:1.68; color:#6B504A; border-radius:12px;
+    transition:background .2s, color .2s, box-shadow .2s;
   }
   .cap + .cap { border-top:1px dashed #F7E6DE; }
   .cap[data-t] { cursor:pointer; }
   .cap[data-t]:active { background:#FFE9EF; }
-  .cap.on { background:#FFE4EC; color:#8A4B5C; }
+  .cap.on {
+    background:linear-gradient(135deg,#FFE0EA,#FFF0DD); color:#7C4053; font-weight:600;
+    box-shadow:inset 0 0 0 1.5px #F6C2D2;
+  }
   .cap-t {
     display:inline-block; font-size:11px; color:#D48BA0; background:#FFF0F2;
     border-radius:8px; padding:1px 6px; margin-right:8px; font-variant-numeric:tabular-nums;
@@ -290,7 +327,21 @@
 
 <header>
   <div class="hrow">
-    <h1>🎧 My Podcast</h1>
+    <h1><svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+      <defs>
+        <linearGradient id="logoBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#FFF8F0"/>
+          <stop offset="1" stop-color="#FFE3EC"/>
+        </linearGradient>
+      </defs>
+      <rect x="1" y="1" width="46" height="46" rx="12" fill="url(#logoBg)"/>
+      <circle cx="24" cy="25" r="15" fill="#F496B0"/>
+      <circle cx="24" cy="25" r="12" fill="none" stroke="#FBCBD8" stroke-width="1.6"/>
+      <circle cx="24" cy="25" r="8.2" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="1.1"/>
+      <circle cx="24" cy="25" r="5.2" fill="#FFF9EF"/>
+      <path d="M24 28.1c-2.2-1.7-3.9-3.3-3.9-5 0-1.3 1-2.3 2.3-2.3.8 0 1.3.4 1.6.9.3-.5.8-.9 1.6-.9 1.3 0 2.3 1 2.3 2.3 0 1.7-1.7 3.3-3.9 5z" fill="#EF6F92"/>
+      <path d="M38 9.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" fill="#FFF9EF"/>
+    </svg>My Podcast</h1>
     <div class="stat" id="stat">—</div>
   </div>
   <div class="tabs">
@@ -355,6 +406,13 @@
       </div>
       <div class="hint">服务器现在装的是英语模型（small.en），转英文最准；转中文会不准。</div>
     </div>
+    <div class="field">
+      <label class="switchrow">
+        <span>播放时自动生成字幕 <small>（边转边显示）</small></span>
+        <input type="checkbox" id="setAutoSub">
+      </label>
+      <div class="hint">第一次听一期节目时在后台转写，句子会随着转写一句句出现；不想自动上传就关掉，只在点「✨ 生成字幕」时转。</div>
+    </div>
     <div class="rowbtns">
       <button class="btn" id="saveSet" type="button">保存</button>
       <button class="btn ghost" id="testSet" type="button">测试连接</button>
@@ -362,7 +420,8 @@
     <div class="hint" id="setMsg"></div>
     <div class="hint">
       服务器怎么搭：把 <code>server\</code> 文件夹传到服务器，按里面的「部署说明.md」跑起来。<br>
-      手机和服务器要在能互相访问的网络里（公网服务器或同一个 Wi-Fi）。
+      手机和服务器要在能互相访问的网络里（公网服务器或同一个 Wi-Fi）。<br>
+      连不上时：「405」= http 被 301 跳到 https 了，换 https 地址或按部署说明 8.2 给 /stt/ 加不跳转反代；「Failed to fetch / 超时」= 域名被网络拦或服务没起，先换 IP 入口试试。
     </div>
   </section>
 </main>
@@ -383,7 +442,7 @@
     <button class="cbtn" id="back15" type="button">↺15</button>
     <button class="play" id="playBtn" type="button">▶</button>
     <button class="cbtn" id="fwd15" type="button">15↻</button>
-    <button class="cbtn small" id="modeBtn" type="button">🔁</button>
+    <button class="cbtn small" id="modeBtn" type="button" aria-label="播放模式"></button>
   </div>
 </div>
 
@@ -391,8 +450,8 @@
 <div class="np" id="np">
   <div class="np-top">
     <button class="np-close" id="npClose" type="button">⌄</button>
-    <div class="np-label">now playing</div>
-    <div class="np-heart">💗</div>
+    <div class="np-label">正在播放 ♡</div>
+    <div class="np-heart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6c-4.1-3-7.1-5.8-7.1-8.9 0-2.4 1.8-4.1 4.1-4.1 1.5 0 2.5.8 3 1.7.5-.9 1.5-1.7 3-1.7 2.3 0 4.1 1.7 4.1 4.1 0 3.1-3 5.9-7.1 8.9z" fill="#EF6F92"/><path d="M19.2 4.2l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" fill="#F9B8C8"/></svg></div>
   </div>
 
   <div class="np-body">
@@ -406,13 +465,18 @@
     <div class="np-title" id="npTitle">—</div>
     <div class="np-sub" id="npSub"></div>
 
+    <div class="np-live" id="npLive">
+      <span class="np-live-ico">🎵</span>
+      <span class="np-live-text" id="npLiveText">字幕会跟着播放走</span>
+    </div>
+
     <div class="np-bar">
       <input type="range" id="npSeek" min="0" max="1000" value="0">
       <div class="np-times"><span id="npCur">0:00</span><span id="npDur">0:00</span></div>
     </div>
 
     <div class="np-ctrls">
-      <button class="np-btn" id="npMode" type="button" title="顺序播放">🔁</button>
+      <button class="np-btn" id="npMode" type="button" title="顺序播放"></button>
       <button class="np-btn" id="npPrev" type="button" title="上一首">⏮</button>
       <button class="np-btn txt" id="npBack" type="button" title="后退 15 秒">↺15</button>
       <button class="np-play" id="npPlay" type="button">▶</button>
@@ -441,10 +505,15 @@
   const DB_NAME = 'my_podcast_db', DB_VER = 1, STORE = 'episodes';
   const SETTINGS_KEY = 'my_podcast_settings';
   const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+  const MODE_SVG = {
+    order: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5A5.5 5.5 0 0 1 9.5 4H17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M14.4 1.6 17.4 4l-3 2.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 14.5A5.5 5.5 0 0 1 14.5 20H7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M9.6 22.4 6.6 20l3-2.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    one: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5A5.5 5.5 0 0 1 9.5 4H17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M14.4 1.6 17.4 4l-3 2.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 14.5A5.5 5.5 0 0 1 14.5 20H7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M9.6 22.4 6.6 20l3-2.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><text x="12" y="15.1" text-anchor="middle" font-size="8.5" font-weight="700" fill="currentColor">1</text></svg>',
+    shuffle: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h3.4c1.2 0 2.3.5 3.1 1.4l6.3 7.2c.7.8 1.8 1.3 2.9 1.3H21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="m18.2 13.2 2.9 2.7-2.9 2.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 18h3.4c1.2 0 2.3-.5 3.1-1.3l.6-.7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="m14 7.8.5-.5C15.3 6.5 16.4 6 17.6 6H21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="m18.2 3.3 2.9 2.7-2.9 2.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
   const MODES = [
-    { k: 'order', icon: '🔁', name: '顺序播放' },
-    { k: 'one', icon: '🔂', name: '单曲循环' },
-    { k: 'shuffle', icon: '🔀', name: '随机播放' }
+    { k: 'order', icon: MODE_SVG.order, name: '顺序播放' },
+    { k: 'one', icon: MODE_SVG.one, name: '单曲循环' },
+    { k: 'shuffle', icon: MODE_SVG.shuffle, name: '随机播放' }
   ];
   const Native = window.Native || null;
 
@@ -453,9 +522,11 @@
   let view = [];
   let current = null;
   let curUrl = '';
-  // 服务器地址和口令在「设置」页自己填；留空不影响导入、播放和录音。
+  // 服务器地址和口令由使用者在「设置」页填写，仓库不带任何默认值。
   const DEFAULTS = { server: '', token: '' };
-  let settings = { speed: 1, mode: 'order', lastId: null, server: DEFAULTS.server, token: DEFAULTS.token, lang: 'en' };
+  let settings = { speed: 1, mode: 'order', lastId: null, server: DEFAULTS.server, token: DEFAULTS.token, lang: 'en', autoSub: true };
+  // 转写状态放内存，别写进 IndexedDB（不然会把 busy 存进节目里）
+  const trState = {};
   let saveTimer = null;
 
   const $ = id => document.getElementById(id);
@@ -588,9 +659,11 @@
       }
     } catch (e) {}
     if (!MODES.some(m => m.k === settings.mode)) settings.mode = 'order';
+    if (settings.autoSub !== false) settings.autoSub = true;
     applySettings();
     $('setServer').value = settings.server || '';
     $('setToken').value = settings.token || '';
+    $('setAutoSub').checked = settings.autoSub !== false;
     const lr = document.querySelector('input[name=lang][value="' + (settings.lang || 'en') + '"]');
     if (lr) lr.checked = true;
   }
@@ -606,8 +679,8 @@
     $('speed').textContent = speedLabel();
     $('npSpeed').textContent = speedLabel();
     const mi = modeInfo();
-    $('modeBtn').textContent = mi.icon;
-    $('npMode').textContent = mi.icon;
+    $('modeBtn').innerHTML = mi.icon;
+    $('npMode').innerHTML = mi.icon;
     $('modeBtn').classList.toggle('on', settings.mode !== 'order');
     $('npMode').classList.toggle('modeon', settings.mode !== 'order');
     $('modeBtn').title = mi.name;
@@ -621,7 +694,7 @@
     settings.mode = MODES[(i + 1) % MODES.length].k;
     saveSettings();
     applySettings();
-    toast(modeInfo().icon + ' ' + modeInfo().name);
+    toast('🎧 ' + modeInfo().name);
   }
   function cycleSpeed() {
     const i = SPEEDS.indexOf(settings.speed);
@@ -771,6 +844,7 @@
     if (autoplay !== false) {
       const p = audio.play();
       if (p && p.catch) p.catch(() => updateTransportUI());
+      maybeAutoSub(e);
     }
   }
 
@@ -856,6 +930,7 @@
     try { history.pushState({ np: 1 }, ''); } catch (e) {}
     capLast = -1;
     highlightCaption();
+    maybeAutoSub(current);
   }
   function closeNP(fromPop) {
     const np = $('np');
@@ -874,6 +949,9 @@
 
   /* ---------- 字幕 ---------- */
   let capLast = -1;
+  let capSegs = [];
+  let capUserScrollAt = 0;
+  let autoTrActive = null;
 
   function splitSentences(t) {
     const norm = t.replace(/\s+/g, ' ').trim();
@@ -881,42 +959,136 @@
     return (arr || [norm]).map(s => s.trim()).filter(Boolean);
   }
 
-  function renderCaptions() {
-    const box = $('npCaptions');
-    if (!current) { box.innerHTML = ''; return; }
-    const segs = Array.isArray(current.segments) ? current.segments : [];
-    if (segs.length) {
-      box.innerHTML = segs.map(s =>
-        '<div class="cap" data-t="' + (Number(s.start) || 0) + '">' +
-          '<span class="cap-t">' + fmtTime(Number(s.start) || 0) + '</span>' + esc(s.text) +
-        '</div>'
-      ).join('');
-      capLast = -1;
-      return;
-    }
-    const text = (current.text || '').trim();
-    if (!text) {
-      box.innerHTML = '<div class="cap-empty">还没有字幕<br>点上面「✨ 生成字幕」把它转成文字</div>';
-      return;
-    }
-    box.innerHTML = splitSentences(text).map(p => '<div class="cap">' + esc(p) + '</div>').join('');
+  function trInfo(ep) {
+    if (!ep) return { busy: false, count: 0, err: '' };
+    if (!trState[ep.id]) trState[ep.id] = { busy: false, count: 0, err: '' };
+    return trState[ep.id];
   }
 
-  function highlightCaption() {
-    if (!current || !Array.isArray(current.segments) || !current.segments.length) return;
-    const segs = current.segments;
+  function hasCaptions(ep) {
+    return !!(ep && ((ep.text && ep.text.trim()) || (Array.isArray(ep.segments) && ep.segments.length)));
+  }
+
+  // 有真实 segments 就用真实的；只有整段 text 时按字数比例造一条时间轴，
+  // 这样老字幕也能跟着播放高亮 / 滚动，不用重新转写。
+  function captionSegments(ep) {
+    if (!ep) return [];
+    const real = (Array.isArray(ep.segments) ? ep.segments : [])
+      .map(s => ({ start: Number(s.start) || 0, end: Number(s.end) || 0, text: String(s.text || '').trim() }))
+      .filter(s => s.text);
+    if (real.length) return real.sort((a, b) => a.start - b.start);
+    const text = (ep.text || '').trim();
+    if (!text) return [];
+    const dur = Number(ep.duration) || (current && current.id === ep.id ? audio.duration : 0) || 0;
+    if (!(dur > 0)) return [];
+    const parts = splitSentences(text);
+    if (!parts.length) return [];
+    const weights = parts.map(p => Math.max(1, p.length));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let acc = 0;
+    return parts.map((p, i) => {
+      const start = dur * acc / total;
+      acc += weights[i];
+      return { start: start, end: dur * acc / total, text: p, approx: true };
+    });
+  }
+
+  function scrollCaptionIntoView(el, box) {
+    if (!el || !box) return;
+    const br = box.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const relTop = er.top - br.top + box.scrollTop;
+    const relBottom = relTop + er.height;
+    const pad = 6;
+    if (relTop < box.scrollTop + pad || relBottom > box.scrollTop + box.clientHeight - pad) {
+      const target = Math.max(0, relTop - box.clientHeight / 2 + er.height / 2);
+      try { box.scrollTo({ top: target, behavior: 'smooth' }); }
+      catch (e) { box.scrollTop = target; }
+    }
+  }
+
+  function updateLiveCaption(idx) {
+    const bar = $('npLive');
+    const txt = $('npLiveText');
+    if (!bar || !txt) return;
+    bar.classList.remove('on', 'busy');
+    if (!current) {
+      txt.textContent = '点一个节目，字幕会跟着播放走';
+      return;
+    }
+    const st = trInfo(current);
+    if (st.busy) {
+      if (capSegs.length && idx >= 0 && capSegs[idx]) {
+        txt.textContent = capSegs[idx].text + ' · 听写中' + (st.count ? ' ' + st.count + ' 句' : '…');
+        bar.classList.add('on');
+      } else {
+        const sec = st.startedAt ? Math.max(0, Math.round((Date.now() - st.startedAt) / 1000)) : 0;
+        txt.textContent = st.count
+          ? '✨ 正在听写…已出 ' + st.count + ' 句'
+          : '✨ 正在准备实时字幕' + (sec ? '（已等 ' + sec + ' 秒）' : '') + '，先听着…';
+        bar.classList.add('busy');
+      }
+      return;
+    }
+    if (capSegs.length && idx >= 0 && capSegs[idx]) {
+      txt.textContent = capSegs[idx].text;
+      bar.classList.add('on');
+      return;
+    }
+    if (capSegs.length) {
+      txt.textContent = capSegs[0].text;
+      bar.classList.add('on');
+      return;
+    }
+    txt.textContent = (current.text || '').trim()
+      ? '字幕准备好了，播放时会跟着走 🎵'
+      : '点「✨ 生成字幕」，字幕会跟着播放走';
+  }
+
+  function renderCaptions() {
+    const box = $('npCaptions');
+    capSegs = captionSegments(current);
+    capLast = -1;
+    if (!current) { box.innerHTML = ''; updateLiveCaption(-1); return; }
+    if (capSegs.length) {
+      box.innerHTML = capSegs.map(s =>
+        '<div class="cap" data-t="' + (Number(s.start) || 0) + '">' +
+          '<span class="cap-t">' + (s.approx ? '~' : '') + fmtTime(Number(s.start) || 0) + '</span>' + esc(s.text) +
+        '</div>'
+      ).join('');
+      highlightCaption(true);
+      return;
+    }
+    const st = trInfo(current);
+    if (st.busy) {
+      box.innerHTML = '<div class="cap-empty">✨ 正在准备实时字幕…<br>转出来的句子会一句句出现在这里</div>';
+    } else if (st.err) {
+      box.innerHTML = '<div class="cap-empty">字幕没成功：' + esc(st.err.slice(0, 90)) +
+        '<br>检查设置里的服务器地址、口令，或点上面重试</div>';
+    } else {
+      box.innerHTML = '<div class="cap-empty">还没有字幕<br>点上面「✨ 生成字幕」把它转成文字</div>';
+    }
+    updateLiveCaption(-1);
+  }
+
+  function highlightCaption(force) {
+    if (!current) { if (force) updateLiveCaption(-1); return; }
     const t = audio.currentTime || 0;
     let idx = -1;
-    for (let i = 0; i < segs.length; i++) {
-      if (t >= (Number(segs[i].start) || 0)) idx = i; else break;
+    for (let i = 0; i < capSegs.length; i++) {
+      if (t >= (Number(capSegs[i].start) || 0)) idx = i; else break;
     }
-    if (idx === capLast) return;
+    if (!force && idx === capLast) return;
     capLast = idx;
     const box = $('npCaptions');
     const old = box.querySelector('.cap.on');
     if (old) old.classList.remove('on');
-    const now = box.children[idx];
-    if (now && now.classList && now.classList.contains('cap')) now.classList.add('on');
+    const now = idx >= 0 ? box.children[idx] : null;
+    if (now && now.classList && now.classList.contains('cap')) {
+      now.classList.add('on');
+      if (Date.now() - capUserScrollAt > 2500) scrollCaptionIntoView(now, box);
+    }
+    updateLiveCaption(idx);
   }
 
   function plainCaption() {
@@ -926,6 +1098,14 @@
       return current.segments.map(s => s.text).join(' ');
     }
     return '';
+  }
+
+  function maybeAutoSub(ep) {
+    if (!settings.autoSub || !ep || hasCaptions(ep)) return;
+    if (trInfo(ep).busy || autoTrActive) return;              // 一次只自动转一期
+    if (!candidateBases(settings.server).length) return;       // 没配服务器就不动
+    autoTrActive = ep.id;
+    transcribeEpisode(ep, null, { auto: true });
   }
 
   /* ---------- 录音 ---------- */
@@ -1045,8 +1225,7 @@
   });
 
   /* ---------- 转写 ---------- */
-  // 同一台服务若有多个入口（域名 + 直连 IP），在这张表里互相映射：
-  // 某个入口连不上时，转写会自动换另一个再试。
+  // 可选：同一台服务的多套入口（例如域名 + 直连 IP）。配好后连不上会自动换另一个再试。
   const SERVER_HOST_ALTS = {};
 
   function normalizeBase(s) {
@@ -1079,19 +1258,94 @@
     return out.filter((b, i) => out.indexOf(b) === i);
   }
 
-  async function transcribeEpisode(ep, target) {
-    const bases = candidateBases(settings.server);
-    if (!bases.length) { toast('先去「设置」填服务器地址'); setTab('set'); return ''; }
-    if (!ep || !ep.blob) { toast('找不到音频'); return ''; }
+  // 逐行读 NDJSON：每读到一句就回调，最后 done 行给总 text
+  async function readNDJSON(res, onItem, onDone) {
+    const parseLine = line => {
+      line = line.trim();
+      if (!line) return;
+      let obj;
+      try { obj = JSON.parse(line); } catch (e) { return; }
+      if (obj.error) throw new Error(obj.error);
+      if (obj.done) onDone(obj);
+      else if (obj.text != null) onItem(obj);
+    };
+    if (res.body && res.body.getReader) {
+      const reader = res.body.getReader();
+      const dec = new TextDecoder('utf-8');
+      let buf = '';
+      while (true) {
+        const r = await reader.read();
+        if (r.done) break;
+        buf += dec.decode(r.value, { stream: true });
+        let nl;
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          parseLine(buf.slice(0, nl));
+          buf = buf.slice(nl + 1);
+        }
+      }
+      buf += dec.decode();
+      if (buf.trim()) parseLine(buf);
+      return;
+    }
+    (await res.text()).split('\n').forEach(parseLine);
+  }
 
-    target.disabled = true;
-    const old = target.textContent;
-    target.textContent = '转写中…';
+  async function transcribeEpisode(ep, target, opts) {
+    opts = opts || {};
+    const auto = !!opts.auto;
+    const bases = candidateBases(settings.server);
+    if (!bases.length) {
+      if (!auto) { toast('先去「设置」填服务器地址'); setTab('set'); }
+      return '';
+    }
+    if (!ep || !ep.blob) { if (!auto) toast('找不到音频'); return ''; }
+
+    const st = trInfo(ep);
+    if (st.busy) { if (!auto) toast('正在转写中…'); return ''; }
+    st.busy = true;
+    st.count = 0;
+    st.startedAt = Date.now();
+    st.err = '';
+    const tick = setInterval(() => {
+      if (current && current.id === ep.id) updateLiveCaption(capLast);
+    }, 1000);
+
+    const backup = {
+      text: ep.text || '',
+      segments: Array.isArray(ep.segments) ? ep.segments.slice() : []
+    };
+    // 边转边显示：先清空；失败时再还原
+    ep.text = '';
+    ep.segments = [];
+    if (target) {
+      target.disabled = true;
+      target._label = target._label || target.textContent;
+      target.textContent = '转写中…';
+    }
+    if (current && current.id === ep.id) renderCaptions();
 
     let lastErr = '';
     try {
       for (let i = 0; i < bases.length; i++) {
         const base = bases[i];
+        const newSegs = [];
+        let finalData = null;
+        let lastPaint = 0;
+        let to = null;
+        const paint = () => {
+          ep.segments = newSegs.slice();
+          st.count = newSegs.length;
+          if (target) target.textContent = '转写中 ' + newSegs.length + ' 句';
+          if (!current || current.id !== ep.id) return;
+          const now = Date.now();
+          if (newSegs.length === 1 || now - lastPaint > 350) {
+            lastPaint = now;
+            renderCaptions();
+          } else {
+            updateLiveCaption(capLast);
+          }
+        };
+
         try {
           const fd = new FormData();
           const isM4a = /mp4|m4a|aac/i.test(ep.blob.type || '');
@@ -1102,39 +1356,86 @@
           if (settings.token) headers['X-Token'] = settings.token;
 
           const ctrl = new AbortController();
-          const to = setTimeout(() => ctrl.abort(), 300000);
-          const res = await fetch(base + '/api/transcribe', { method: 'POST', headers: headers, body: fd, signal: ctrl.signal });
-          clearTimeout(to);
-
+          to = setTimeout(() => ctrl.abort(), 300000);
+          const res = await fetch(base + '/api/transcribe?stream=1', { method: 'POST', headers: headers, body: fd, signal: ctrl.signal });
           if (!res.ok) {
             const txt = await res.text();
             throw new Error('服务器 ' + res.status + '：' + txt.slice(0, 120));
           }
-          const data = await res.json();
-          if (data.error) throw new Error(data.error);
 
-          ep.text = data.text || '';
-          if (Array.isArray(data.segments) && data.segments.length) ep.segments = data.segments;
+          const ctype = res.headers.get('content-type') || '';
+          if (ctype.indexOf('ndjson') >= 0) {
+            // 新服务：一段一段来，字幕边转边出现
+            await readNDJSON(res, item => {
+              newSegs.push({
+                start: Number(item.start) || 0,
+                end: Number(item.end) || 0,
+                text: String(item.text || '').trim()
+              });
+              paint();
+            }, done => { finalData = done; });
+            ep.text = (finalData && finalData.text) || newSegs.map(s => s.text).join(' ');
+            ep.segments = newSegs;
+          } else {
+            // 老服务不认 stream，退回整段 JSON
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            finalData = data;
+            ep.text = data.text || '';
+            ep.segments = Array.isArray(data.segments) ? data.segments : [];
+          }
+
+          // 老服务也常带 duration；补上后纯文字字幕才能按字数排时间轴
+          if (!(Number(ep.duration) > 0) && finalData && Number(finalData.duration) > 0) {
+            ep.duration = Number(finalData.duration);
+          }
+          st.count = ep.segments.length;
+          st.err = '';
           await putItem(ep);
-          await reload();
+          render();
           if (i > 0) {
             settings.server = base;
             saveSettings();
             $('setServer').value = base;
             toast('已自动换用 ' + base);
           }
-          toast('转写完成（' + (data.elapsed || '?') + ' 秒）');
+          if (!auto) {
+            toast('转写完成（' + ((finalData && finalData.elapsed) || '?') + ' 秒）');
+          } else if (current && current.id === ep.id) {
+            toast('实时字幕准备好了 ✨');
+          }
           return ep.text;
         } catch (e) {
+          // 这个入口失败：还原旧字幕，换下一个入口
+          ep.text = backup.text;
+          ep.segments = backup.segments.slice();
           lastErr = e.name === 'AbortError' ? '超时了，音频太长或服务器没响应' : (e.message || String(e));
+          st.err = lastErr;
           if (e.name === 'AbortError') break; // 超时不换地址重传，太长会一直等
+        } finally {
+          if (to) clearTimeout(to);
         }
       }
-      toast('转写失败：' + lastErr);
+
+      if (current && current.id === ep.id) {
+        renderCaptions();
+        if (auto) {
+          const txt = $('npLiveText');
+          if (txt) txt.textContent = '字幕没准备好：' + lastErr.slice(0, 40);
+        }
+      }
+      if (!auto) toast('转写失败：' + lastErr);
       return '';
     } finally {
-      target.disabled = false;
-      target.textContent = old;
+      clearInterval(tick);
+      st.busy = false;
+      st.startedAt = 0;
+      if (auto && autoTrActive === ep.id) autoTrActive = null;
+      if (target) {
+        target.disabled = false;
+        target.textContent = target._label || '✨ 生成字幕';
+      }
+      if (current && current.id === ep.id) { renderCaptions(); updateLiveCaption(capLast); }
     }
   }
 
@@ -1176,34 +1477,76 @@
     settings.token = $('setToken').value.trim();
     const lr = document.querySelector('input[name=lang]:checked');
     settings.lang = lr ? lr.value : 'en';
+    settings.autoSub = $('setAutoSub').checked;
     saveSettings();
     $('setMsg').textContent = '已保存';
     toast('设置已保存');
   });
+
+  // 健康检查可能被 301 带去另一个地址；把最终地址还原成 base 再测 POST
+  function baseFromHealthUrl(u) {
+    try {
+      const x = new URL(u);
+      x.pathname = x.pathname.replace(/\/api\/health\/?$/, '');
+      return (x.origin + x.pathname).replace(/\/+$/, '');
+    } catch (e) { return ''; }
+  }
 
   $('testSet').addEventListener('click', async () => {
     const bases = candidateBases($('setServer').value);
     if (!bases.length) { $('setMsg').textContent = '先填服务器地址'; return; }
     $('setMsg').textContent = '测试中…';
     let last = '';
+    // 服务器已经回了 HTTP（口令错 / 路径错 / 5xx）就别再换协议重试，直接把真实原因报出来
+    const stop = msg => { const err = new Error(msg); err.final = true; return err; };
     for (let i = 0; i < bases.length; i++) {
       const base = bases[i];
       try {
         const ctrl = new AbortController();
         const to = setTimeout(() => ctrl.abort(), 10000);
-        const res = await fetch(base + '/api/health', { signal: ctrl.signal });
+        const res = await fetch(base + '/api/health', { signal: ctrl.signal, cache: 'no-store' });
         clearTimeout(to);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (!res.ok) throw stop('健康检查失败（HTTP ' + res.status + '）');
         const data = await res.json();
-        if (!data.ok) throw new Error(JSON.stringify(data));
-        if (i > 0) $('setServer').value = base;
-        $('setMsg').textContent = '连接成功 · 模型 ' + data.model + (i > 0 ? '（已换成 ' + base + '，记得保存）' : '');
+        if (!data.ok) throw stop('服务器健康检查返回异常：' + JSON.stringify(data));
+
+        // 健康检查只是 GET；POST 可能被 301 改成 GET（405）或口令不对（401）。
+        // 这里发一个不带音频的空 POST 探一下，400/401/405 能立刻区分原因。
+        const finalBase = baseFromHealthUrl(res.url) || base;
+        const hdr = {};
+        const tok = $('setToken').value.trim();
+        if (tok) hdr['X-Token'] = tok;
+        const ctrl2 = new AbortController();
+        const to2 = setTimeout(() => ctrl2.abort(), 15000);
+        let probe;
+        try {
+          probe = await fetch(finalBase + '/api/transcribe', {
+            method: 'POST', headers: hdr, body: new FormData(), signal: ctrl2.signal, cache: 'no-store'
+          });
+        } finally {
+          clearTimeout(to2);
+        }
+        if (probe.status === 401 || probe.status === 403) throw stop('服务器能连上，但口令不对（HTTP ' + probe.status + '）—— 检查设置里的口令');
+        if (probe.status === 405) throw stop('服务器能连上，但上传被 301 改成了 GET（405）—— 请用 HTTPS 地址，或按部署说明改 /stt/ 反代');
+        if (probe.status === 404) throw stop('服务器能连上，但找不到 /api/transcribe（404）—— 检查地址是否少了 /stt');
+        if (probe.status >= 500) throw stop('服务器能连上，但上传接口报错（HTTP ' + probe.status + '）—— 看服务器日志');
+
+        const changed = finalBase !== base || i > 0;
+        if (changed) $('setServer').value = finalBase;
+        if (changed || settings.token !== tok) {
+          settings.server = finalBase;
+          settings.token = tok;
+          saveSettings();
+        }
+        $('setMsg').textContent = '连接成功 · 模型 ' + data.model +
+          (changed ? '（已自动改用并保存 ' + finalBase + '）' : '');
         return;
       } catch (e) {
         last = e.name === 'AbortError' ? '超时' : (e.message || String(e));
+        if (e.final) break;
       }
     }
-    $('setMsg').textContent = '连不上：' + last + '（HTTP 会被 301 跳 HTTPS，两个入口都不通就按部署说明改 /stt/ 反代）';
+    $('setMsg').textContent = '连不上：' + last;
   });
 
   /* ---------- 音频事件 ---------- */
@@ -1220,6 +1563,18 @@
     if (!npSeeking) $('npSeek').value = v;
     highlightCaption();
     savePosition(false);
+  });
+
+  // 音频时长拿到后，纯文字字幕才能按字数排出时间轴
+  audio.addEventListener('loadedmetadata', () => {
+    if (!current) return;
+    const hasReal = Array.isArray(current.segments) && current.segments.length;
+    if (!hasReal && (current.text || '').trim()) renderCaptions();
+  });
+
+  // 手动滚字幕时，短时间内不抢回自动滚动
+  ['touchstart', 'wheel', 'mousedown'].forEach(ev => {
+    $('npCaptions').addEventListener(ev, () => { capUserScrollAt = Date.now(); }, { passive: true });
   });
 
   $('seek').addEventListener('input', () => { seeking = true; });
