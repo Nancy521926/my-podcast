@@ -522,7 +522,8 @@
   let view = [];
   let current = null;
   let curUrl = '';
-  // 服务器地址和口令由使用者在「设置」页填写，仓库不带任何默认值。
+  // 服务器 2026-11-18 起了全站 HTTPS：走 HTTP 的 POST 会被 301 变成 GET 而失败，所以默认用域名；
+  // 有网络会拦这个域名的 TLS 握手，失败时自动回退到 IP 的 HTTP 入口。
   const DEFAULTS = { server: '', token: '' };
   let settings = { speed: 1, mode: 'order', lastId: null, server: DEFAULTS.server, token: DEFAULTS.token, lang: 'en', autoSub: true };
   // 转写状态放内存，别写进 IndexedDB（不然会把 busy 存进节目里）
@@ -1018,14 +1019,15 @@
     }
     const st = trInfo(current);
     if (st.busy) {
+      const part = st.parts ? '第 ' + Math.min(st.part + 1, st.parts) + '/' + st.parts + ' 段' : '';
       if (capSegs.length && idx >= 0 && capSegs[idx]) {
-        txt.textContent = capSegs[idx].text + ' · 听写中' + (st.count ? ' ' + st.count + ' 句' : '…');
+        txt.textContent = capSegs[idx].text + ' · 听写中' + (part ? ' ' + part : '') + (st.count ? ' · ' + st.count + ' 句' : '');
         bar.classList.add('on');
       } else {
         const sec = st.startedAt ? Math.max(0, Math.round((Date.now() - st.startedAt) / 1000)) : 0;
-        txt.textContent = st.count
-          ? '✨ 正在听写…已出 ' + st.count + ' 句'
-          : '✨ 正在准备实时字幕' + (sec ? '（已等 ' + sec + ' 秒）' : '') + '，先听着…';
+        txt.textContent = '✨ ' + (part ? part + ' · ' : '') + (st.phase || '正在准备实时字幕') +
+          (st.count ? ' · 已出 ' + st.count + ' 句' : '') +
+          (sec ? '（已等 ' + sec + ' 秒）' : '') + (st.phase ? '' : '，先听着…');
         bar.classList.add('busy');
       }
       return;
@@ -1061,7 +1063,11 @@
     }
     const st = trInfo(current);
     if (st.busy) {
-      box.innerHTML = '<div class="cap-empty">✨ 正在准备实时字幕…<br>转出来的句子会一句句出现在这里</div>';
+      const part = st.parts ? '第 ' + Math.min(st.part + 1, st.parts) + '/' + st.parts + ' 段' : '';
+      const phase = st.phase || '正在准备实时字幕…';
+      box.innerHTML = '<div class="cap-empty">✨ ' + esc(phase) +
+        (part ? '<br>' + part + (st.count ? ' · 已出 ' + st.count + ' 句' : '') : '') +
+        '<br>转出来的句子会一句句出现在这里</div>';
     } else if (st.err) {
       box.innerHTML = '<div class="cap-empty">字幕没成功：' + esc(st.err.slice(0, 90)) +
         '<br>检查设置里的服务器地址、口令，或点上面重试</div>';
@@ -1225,7 +1231,7 @@
   });
 
   /* ---------- 转写 ---------- */
-  // 可选：同一台服务的多套入口（例如域名 + 直连 IP）。配好后连不上会自动换另一个再试。
+  // 同一台服务的两套入口：域名（HTTPS）和直连 IP（HTTP）
   const SERVER_HOST_ALTS = {};
 
   function normalizeBase(s) {
@@ -1290,6 +1296,178 @@
     (await res.text()).split('\n').forEach(parseLine);
   }
 
+  // ---------- 长音频分块：解码成 16k，再按 27 秒左右切成小段上传 ----------
+  // 服务器一次请求最多只能等 5 分钟（nginx 300s），整条播客很容易超时；
+  // 切成小段后每段单独转、单独显示，最后按时间偏移拼回一条完整字幕。
+  const CHUNK_SEC = 27;
+  const CHUNK_MIN_SEC = 10;
+  const CHUNK_MAX_MB = 48;
+  const CHUNK_TIMEOUT_MAX = 240000;
+  const CHUNK_TIMEOUT_MIN = 90000;
+
+  async function decodeTo16k(blob) {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const decodeWith = ctx => new Promise((resolve, reject) => {
+      blob.arrayBuffer().then(ab => {
+        let ret;
+        try { ret = ctx.decodeAudioData(ab, resolve, reject); }
+        catch (e) { reject(e); return; }
+        if (ret && ret.then) ret.then(resolve, reject);
+      }, reject);
+    });
+    if (OAC) {
+      const ctx = new OAC(1, 16000, 16000);
+      try { return await decodeWith(ctx); }
+      catch (e) { try { if (ctx.close) ctx.close(); } catch (e2) {} }
+    }
+    if (AC) {
+      const ctx = new AC({ sampleRate: 16000 });
+      try { return await decodeWith(ctx); }
+      finally { try { if (ctx.close) ctx.close(); } catch (e2) {} }
+    }
+    throw new Error('这个浏览器不支持音频解码');
+  }
+
+  function writeWavHeader(dv, bytes, sr) {
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); dv.setUint32(4, 36 + bytes, true); w(8, 'WAVE'); w(12, 'fmt ');
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true);
+    dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    w(36, 'data'); dv.setUint32(40, bytes, true);
+  }
+
+  // 在目标时间附近找最安静的位置下刀，尽量不把单词切成两半
+  function quietCut(ch, sr, target, lo, hi) {
+    const win = Math.max(1, Math.floor(0.06 * sr));
+    let best = target, bestE = Infinity;
+    for (let t = lo; t <= hi; t += 0.05) {
+      const idx = Math.floor(t * sr);
+      if (idx < 0 || idx + win >= ch.length) continue;
+      let e = 0;
+      for (let i = idx; i < idx + win; i += 4) { const v = ch[i]; e += v * v; }
+      if (e < bestE) { bestE = e; best = t; }
+    }
+    return best;
+  }
+
+  function planChunks(buf) {
+    const dur = Number(buf.duration) || 0;
+    if (!(dur > 0)) return null;
+    const sr = buf.sampleRate;
+    const ch = buf.getChannelData(0);
+    const cuts = [0];
+    let t = 0;
+    while (dur - t > CHUNK_SEC * 0.6) {
+      let next = Math.min(dur, t + CHUNK_SEC);
+      if (next < dur - 0.05) {
+        // 只在目标点前后 1.5 秒找静音，避免为了等一个停顿把段切得太短
+        next = quietCut(ch, sr, next, Math.max(t + CHUNK_MIN_SEC, next - 1.5), Math.min(dur, next + 1.5));
+      }
+      if (next <= t + 0.5) next = Math.min(dur, t + CHUNK_SEC);
+      cuts.push(next);
+      t = next;
+    }
+    if (cuts[cuts.length - 1] < dur - 0.05) cuts.push(dur);
+    if (cuts.length >= 3 && (cuts[cuts.length - 1] - cuts[cuts.length - 2]) < 2) {
+      cuts.splice(cuts.length - 2, 1);
+    }
+    return cuts.length > 1 ? cuts : null;
+  }
+
+  function makeWav(buf, start, end) {
+    const sr = buf.sampleRate;
+    const a = Math.max(0, Math.floor(start * sr));
+    const b = Math.min(buf.length, Math.floor(end * sr));
+    const n = Math.max(0, b - a);
+    const ab = new ArrayBuffer(44 + n * 2);
+    const dv = new DataView(ab);
+    writeWavHeader(dv, n * 2, sr);
+    const chs = [];
+    for (let c = 0; c < buf.numberOfChannels; c++) chs.push(buf.getChannelData(c));
+    const g = 1 / Math.max(1, chs.length);
+    for (let i = 0; i < n; i++) {
+      let v = 0;
+      for (let c = 0; c < chs.length; c++) v += chs[c][a + i];
+      v *= g;
+      if (v > 1) v = 1; else if (v < -1) v = -1;
+      dv.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7fff, true);
+    }
+    return new Blob([ab], { type: 'audio/wav' });
+  }
+
+  // 老服务器只回整段 text 时，按字数比例造一条时间轴，保证字幕还能跟着播
+  function approxSegments(text, start, end) {
+    const parts = splitSentences(text || '');
+    if (!parts.length) return [];
+    const dur = Math.max(0.1, Number(end) - Number(start));
+    const weights = parts.map(p => Math.max(1, p.length));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let acc = 0;
+    return parts.map((p, i) => {
+      const s = Number(start) + dur * acc / total;
+      acc += weights[i];
+      return { start: s, end: Number(start) + dur * acc / total, text: p, approx: true };
+    });
+  }
+
+  // 上传一小段；服务器支持 stream=1 时通过 onLive 一句句回调
+  async function postChunk(base, blob, lang, token, timeoutMs, onLive) {
+    const fd = new FormData();
+    fd.append('audio', blob, 'chunk.wav');
+    fd.append('lang', lang);
+    const headers = {};
+    if (token) headers['X-Token'] = token;
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(base + '/api/transcribe?stream=1', {
+        method: 'POST', headers: headers, body: fd, signal: ctrl.signal
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error('服务器 ' + res.status + '：' + txt.slice(0, 120));
+      }
+      const ctype = res.headers.get('content-type') || '';
+      if (ctype.indexOf('ndjson') >= 0) {
+        const live = [];
+        let finalData = null;
+        await readNDJSON(res, item => {
+          const seg = {
+            start: Number(item.start) || 0,
+            end: Number(item.end) || 0,
+            text: String(item.text || '').trim()
+          };
+          if (!seg.text) return;
+          live.push(seg);
+          if (onLive) onLive(seg);
+        }, done => { finalData = done; });
+        return {
+          streamed: true,
+          segments: live,
+          text: (finalData && finalData.text) || live.map(s => s.text).join(' '),
+          elapsed: (finalData && finalData.elapsed) || 0
+        };
+      }
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const segs = (Array.isArray(data.segments) ? data.segments : []).map(s => ({
+        start: Number(s.start) || 0,
+        end: Number(s.end) || 0,
+        text: String(s.text || '').trim()
+      })).filter(s => s.text);
+      return {
+        streamed: false,
+        segments: segs,
+        text: data.text || segs.map(s => s.text).join(' '),
+        elapsed: data.elapsed || 0
+      };
+    } finally {
+      clearTimeout(to);
+    }
+  }
+
   async function transcribeEpisode(ep, target, opts) {
     opts = opts || {};
     const auto = !!opts.auto;
@@ -1304,6 +1482,9 @@
     if (st.busy) { if (!auto) toast('正在转写中…'); return ''; }
     st.busy = true;
     st.count = 0;
+    st.part = 0;
+    st.parts = 0;
+    st.phase = '';
     st.startedAt = Date.now();
     st.err = '';
     const tick = setInterval(() => {
@@ -1326,16 +1507,36 @@
 
     let lastErr = '';
     try {
+      // 长音频先解码并按静音点分块；短音频、解码失败或文件太大就走整段
+      let abuf = null, plan = null, total = 0;
+      if (ep.blob.size <= CHUNK_MAX_MB * 1024 * 1024) {
+        st.phase = '正在准备音频…';
+        if (current && current.id === ep.id) { renderCaptions(); updateLiveCaption(capLast); }
+        await new Promise(r => setTimeout(r, 30));
+        try {
+          abuf = await decodeTo16k(ep.blob);
+          if (abuf && abuf.duration > CHUNK_SEC * 1.6) {
+            plan = planChunks(abuf);
+            if (plan) total = plan.length - 1;
+          }
+        } catch (e) { abuf = null; plan = null; total = 0; }
+        if (!plan) abuf = null;
+        st.phase = '';
+        st.parts = total;
+      }
+
       for (let i = 0; i < bases.length; i++) {
         const base = bases[i];
         const newSegs = [];
+        const texts = [];
         let finalData = null;
         let lastPaint = 0;
-        let to = null;
         const paint = () => {
           ep.segments = newSegs.slice();
           st.count = newSegs.length;
-          if (target) target.textContent = '转写中 ' + newSegs.length + ' 句';
+          if (target) {
+            target.textContent = '转写中' + (st.parts ? ' ' + Math.min(st.part + 1, st.parts) + '/' + st.parts : '') + ' · ' + newSegs.length + ' 句';
+          }
           if (!current || current.id !== ep.id) return;
           const now = Date.now();
           if (newSegs.length === 1 || now - lastPaint > 350) {
@@ -1347,48 +1548,90 @@
         };
 
         try {
-          const fd = new FormData();
-          const isM4a = /mp4|m4a|aac/i.test(ep.blob.type || '');
-          fd.append('audio', ep.blob, isM4a ? 'rec.m4a' : 'rec.webm');
-          fd.append('lang', settings.lang || 'en');
-
-          const headers = {};
-          if (settings.token) headers['X-Token'] = settings.token;
-
-          const ctrl = new AbortController();
-          to = setTimeout(() => ctrl.abort(), 300000);
-          const res = await fetch(base + '/api/transcribe?stream=1', { method: 'POST', headers: headers, body: fd, signal: ctrl.signal });
-          if (!res.ok) {
-            const txt = await res.text();
-            throw new Error('服务器 ' + res.status + '：' + txt.slice(0, 120));
-          }
-
-          const ctype = res.headers.get('content-type') || '';
-          if (ctype.indexOf('ndjson') >= 0) {
-            // 新服务：一段一段来，字幕边转边出现
-            await readNDJSON(res, item => {
-              newSegs.push({
-                start: Number(item.start) || 0,
-                end: Number(item.end) || 0,
-                text: String(item.text || '').trim()
-              });
+          if (plan) {
+            // 一段一段上传，每段都在 nginx 的 300 秒限制以内
+            for (let ci = 0; ci < total; ci++) {
+              const start = plan[ci];
+              const end = plan[ci + 1];
+              st.part = ci;
               paint();
-            }, done => { finalData = done; });
-            ep.text = (finalData && finalData.text) || newSegs.map(s => s.text).join(' ');
+              const sec = Math.max(0.5, end - start);
+              const timeoutMs = Math.min(CHUNK_TIMEOUT_MAX, Math.max(CHUNK_TIMEOUT_MIN, Math.round(sec * 15000)));
+              const blob = makeWav(abuf, start, end);
+              const r = await postChunk(base, blob, settings.lang || 'en', settings.token, timeoutMs, seg => {
+                newSegs.push({ start: seg.start + start, end: seg.end + start, text: seg.text });
+                st.count = newSegs.length;
+                paint();
+              });
+              if (!r.streamed) {
+                r.segments.forEach(seg => newSegs.push({
+                  start: seg.start + start, end: seg.end + start, text: seg.text
+                }));
+              }
+              if (!r.segments.length && r.text) {
+                approxSegments(r.text, start, end).forEach(seg => newSegs.push(seg));
+              }
+              if (r.text) texts.push(r.text);
+              else if (r.segments.length) texts.push(r.segments.map(s => s.text).join(' '));
+              st.count = newSegs.length;
+              paint();
+              if (r.elapsed) finalData = { elapsed: ((finalData && finalData.elapsed) || 0) + Number(r.elapsed) };
+            }
+            ep.text = texts.join(' ').replace(/\s+/g, ' ').trim();
             ep.segments = newSegs;
+            if (abuf && abuf.duration > 0) ep.duration = abuf.duration;
+            if (!finalData) finalData = { elapsed: Math.round((Date.now() - st.startedAt) / 1000) };
           } else {
-            // 老服务不认 stream，退回整段 JSON
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            finalData = data;
-            ep.text = data.text || '';
-            ep.segments = Array.isArray(data.segments) ? data.segments : [];
+            // 短音频 / 解码失败：整段上传（和 v1.4 一样）
+            const fd = new FormData();
+            const isM4a = /mp4|m4a|aac/i.test(ep.blob.type || '');
+            fd.append('audio', ep.blob, isM4a ? 'rec.m4a' : 'rec.webm');
+            fd.append('lang', settings.lang || 'en');
+
+            const headers = {};
+            if (settings.token) headers['X-Token'] = settings.token;
+
+            const ctrl = new AbortController();
+            const to = setTimeout(() => ctrl.abort(), 300000);
+            try {
+              const res = await fetch(base + '/api/transcribe?stream=1', { method: 'POST', headers: headers, body: fd, signal: ctrl.signal });
+              if (!res.ok) {
+                const txt = await res.text();
+                throw new Error('服务器 ' + res.status + '：' + txt.slice(0, 120));
+              }
+
+              const ctype = res.headers.get('content-type') || '';
+              if (ctype.indexOf('ndjson') >= 0) {
+                await readNDJSON(res, item => {
+                  newSegs.push({
+                    start: Number(item.start) || 0,
+                    end: Number(item.end) || 0,
+                    text: String(item.text || '').trim()
+                  });
+                  paint();
+                }, done => { finalData = done; });
+                ep.text = (finalData && finalData.text) || newSegs.map(s => s.text).join(' ');
+                ep.segments = newSegs;
+              } else {
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                finalData = data;
+                ep.text = data.text || '';
+                ep.segments = Array.isArray(data.segments) ? data.segments : [];
+              }
+
+              // 老服务也常带 duration；补上后纯文字字幕才能按字数排时间轴
+              if (!(Number(ep.duration) > 0) && finalData && Number(finalData.duration) > 0) {
+                ep.duration = Number(finalData.duration);
+              }
+              if (!ep.segments.length && ep.text && Number(ep.duration) > 0) {
+                ep.segments = approxSegments(ep.text, 0, Number(ep.duration));
+              }
+            } finally {
+              if (to) clearTimeout(to);
+            }
           }
 
-          // 老服务也常带 duration；补上后纯文字字幕才能按字数排时间轴
-          if (!(Number(ep.duration) > 0) && finalData && Number(finalData.duration) > 0) {
-            ep.duration = Number(finalData.duration);
-          }
           st.count = ep.segments.length;
           st.err = '';
           await putItem(ep);
@@ -1409,11 +1652,9 @@
           // 这个入口失败：还原旧字幕，换下一个入口
           ep.text = backup.text;
           ep.segments = backup.segments.slice();
-          lastErr = e.name === 'AbortError' ? '超时了，音频太长或服务器没响应' : (e.message || String(e));
+          lastErr = e.name === 'AbortError' ? '这一段等太久了（服务器忙），稍后重试' : (e.message || String(e));
           st.err = lastErr;
-          if (e.name === 'AbortError') break; // 超时不换地址重传，太长会一直等
-        } finally {
-          if (to) clearTimeout(to);
+          if (e.name === 'AbortError') break; // 超时不换地址重传，免得一直等
         }
       }
 
@@ -1430,6 +1671,9 @@
       clearInterval(tick);
       st.busy = false;
       st.startedAt = 0;
+      st.part = 0;
+      st.parts = 0;
+      st.phase = '';
       if (auto && autoTrActive === ep.id) autoTrActive = null;
       if (target) {
         target.disabled = false;
